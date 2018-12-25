@@ -1,0 +1,471 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Socket.IO Chat</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			body {
+				font: 16px Helvetica, Arial;
+			}
+			
+			button:hover, .button:hover {
+				cursor: pointer;
+			}
+			
+			nav {
+				height: 50px;
+				width: 100%;
+				border-bottom: 1px solid black;
+				display: flex;
+				position: fixed;
+				background: white;
+				align-content: center;
+				justify-content: center;
+				z-index: 1;
+				transition: box-shadow .5s;
+			}
+			nav #uname {
+				height: inherit;
+				width: auto;
+				position: static;
+				font-size: 1.75em;
+				display: flex;
+				padding: 0px 10px;
+			}
+			nav #uname div {
+				width: inherit;
+				align-self: center;
+				text-align: center;
+			}
+			nav .button {
+				height: inherit;
+				display: flex;
+				transition: .25s;
+			}
+			nav img {
+				width: 2em;
+				height: 2em;
+				align-self: center;
+			}
+			nav #nameButton {
+				opacity: 0;
+			}
+			nav #settingsButton {
+				position: absolute;
+				right: 10px;
+			}
+			nav:hover > #nameButton {
+				opacity: 1;
+			}
+			nav .button:hover{
+				cursor: default;
+			}
+			nav .button img:hover{
+				cursor: pointer;
+			}
+			
+			.window {
+				width: 100vw;
+				height: 100vh;
+				background-color: rgba(0,0,0,.8);
+				position: fixed;
+				top: 0px;
+				z-index: 10;
+				display: none;
+				justify-content: center;
+				align-items: center;
+			}
+			.window div {
+				padding: 20px 50px;
+				background-color: rgb(230,230,230);
+			}
+			.window form {
+				padding: 50px;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				flex-direction: column;
+			}
+			.window form input {
+				font: 1.5em Helvetica, Arial;
+				background-color: rgb(250,250,250);
+				text-align: center;
+				border: 1px solid black;
+				margin-top: 10px;
+			}
+			.window form .textInput {
+				width: 200px;
+				height: 50px;
+			}
+			.window form .submit {
+				padding: 10px;
+				background-color: transparent;
+				transition: .25s ease;
+			}
+			.window form .submit:hover {
+				background-color: rgba(0,0,0,.15);
+			}
+			.window form .colorInput {
+				width: 80px;
+				height: 50px;
+			}
+			
+			#messagesContainer {
+				top: 50px;
+				width: 100%;
+				position: absolute;
+			}
+			#messages {
+				list-style-type: none;
+				margin: 0;
+				padding: 0;
+			}
+			#messages li {
+				padding: 5px 10px;
+				width: 70%;
+				line-height: 1.25;
+				overflow-wrap: break-word;
+			}
+			#messages:first-child {
+				margin-top: 5px;
+			}
+			#messages li h1 {
+				font-size: 1.2em;
+				line-height: 2;
+			}
+			#messages li span {
+				border-radius: 10px;
+				padding: 5px 10px;
+			}
+			
+			#userTyping {
+				width: 100%;
+				height: auto;
+				padding: 10px;
+				font-size: .8em;
+				background-color: #eee;
+				display: none;
+				position: fixed;
+			}
+			
+			#messageForm {
+				padding: 8px;
+				position: fixed;
+				bottom: 0;
+				width: 100%;
+				display: flex;
+				flex-wrap: nowrap;
+			}
+			#messageForm input {
+				border: 2px solid black;
+				background-color: rgba(255,255,255,.8);
+				padding: 10px;
+				width: 98%;
+				margin-right: 5px;
+				font-size: 1.5em;
+			}
+			#messageForm button {
+				background: transparent;
+				border: none;
+				font-size: 25px;
+				flex-shrink: 0;
+			}
+		</style>
+	</head>
+	<body onload="init()">
+		<nav class="dynamic">
+			<div id="uname"><div></div></div>
+			<div id="nameButton" class="button"><img src="https://cdn0.iconfinder.com/data/icons/set-app-incredibles/24/Edit-01-512.png" onclick="showNameChangeWindow()"></div>
+			<div id="settingsButton" class="button"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6d/Windows_Settings_app_icon.png" onclick="showSettingsWindow()"></div>
+		</nav>
+		
+		<div id="nameChangeWindow" class="window">
+			<div class="formContainer dynamic">
+				<form onsubmit="return hideNameChange()">
+					<h1>Enter your name:</h1>
+					<input type="text" id="nameChoice" class="textInput">
+					<input type="submit" class="submit button">
+				</form>
+			</div>
+		</div>
+		
+		<div id="settingsWindow" class="window">
+			<div class="formContainer dynamic">
+				<form onsubmit="return hideSettings()">
+					<h1>Choose a color:</h1>
+					<input type="color" id="colorChoice" class="colorInput" value="#00FFFF">
+					<input type="submit" class="submit button">
+				</form>
+			</div>
+		</div>
+		
+		<div id='messagesContainer'><ul id="messages"></ul></div>
+		
+		<div id="userTyping"><span id="typerName"></span><span>typing</span></div>
+		
+		<form action="" id="messageForm" class="dynamic">
+			<input id="m" autocomplete="off"/><button>→</button>
+		</form>
+		
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+		<script src="https://www.w3schools.com/lib/w3color.js"></script>
+		<script>
+			var uname = "";
+			var id;
+			var color = "cyan";
+			
+			function init() {
+				checkForName();
+				checkForColor();
+				
+				//Sets the bounds of the messages container so all messages can be seen
+				var navHeight = window.getComputedStyle(document.getElementsByTagName("nav")[0]).height;
+				var formHeight = window.getComputedStyle(document.getElementById("messageForm")).height;
+				$("#messagesContainer").css({"top" : navHeight, "margin-bottom" : formHeight});
+				$("#userTyping").css("bottom", formHeight);
+			}
+			
+			/**Checks if there is a stored name in a cookie.
+			If not, shows the name entry window*/
+			function checkForName() {
+				var name = getCookie("username");
+				if(name!="") {
+					uname = name;
+					updateNameTag();
+					//If there's a name, there will be an id
+					id = getCookie("id");
+				}
+				else {
+					$("#nameChangeWindow").css("display", "flex");
+				}
+			}
+			
+			/*Checks if there is a stored color in a cookie.
+			If not, stays the default color of cyan*/
+			function checkForColor() {
+				var colorCookie = getCookie("color");
+				if(colorCookie!="") {
+					color = colorCookie;
+					$("#colorChoice").val(color);
+				}
+				updateColors();
+			}
+			
+			function getCookie(cname) {
+				var name = cname + "=";
+				var decodedCookie = decodeURIComponent(document.cookie);
+				var ca = decodedCookie.split(';');
+				for(var i = 0; i <ca.length; i++) {
+					var c = ca[i];
+					while (c.charAt(0) == ' ') {
+						c = c.substring(1);
+					}
+					if (c.indexOf(name) == 0) {
+						return c.substring(name.length, c.length);
+					}
+				}
+				return "";
+			}
+
+			/**Hides the window used to change the username
+			and updates variables relating to name*/
+			function hideNameChange() {
+				uname = $("#nameChoice").val();
+				if(uname=="")
+					alert("Username cannot be empty");
+				else if(uname.length>39)
+					alert("Username must be less than forty characters")
+				else if(uname.includes(":"))
+					alert("Username cannot contain a colon")
+				else if(uname.includes("<") || uname.includes(">"))
+					alert("Username cannot contain angle brackets")
+				else {
+					$("#nameChangeWindow").css("display", "none");
+					document.cookie = "username=" + uname;
+					id = Math.floor(Math.random()*(2**16 - 1)); //16 bit id
+					document.cookie = "id=" + id;
+					updateNameTag();
+					return true;
+				}
+				return false;
+			}
+			
+			/**Updates the name shown in the nav*/
+			function updateNameTag() {
+				$("#uname").html("<div>" + uname + "</div>");
+			}
+			
+			/**Shows the form used to change the username*/
+			function showNameChangeWindow() {
+				$("#nameChoice").val("");
+				$("#nameChangeWindow").css("display", "flex");
+			}
+			
+			/**Hides the settings window and changes settings values
+			with form input*/
+			function hideSettings() {
+				var newColor = document.getElementById("colorChoice").value;
+				
+				/*Checking for darkness got really annoying
+				var colorObj = new w3color(newColor);
+				if(colorObj.isDark()) { //colorObj.toHsl().l < .5
+					alert("Your color is too dark");
+					return false;
+				}*/
+				
+				$('#settingsWindow').css("display", "none");
+				color = newColor;
+				document.cookie = "color=" + color;
+				updateColors();
+				return true;
+			}
+			
+			function showSettingsWindow() {
+				$('#settingsWindow').css("display", "flex");
+			}
+			
+			/**Updates the colors of elements deemed as dynamic*/
+			function updateColors() {
+				$('.dynamic').css("background-color", color);
+				$('.senderName').css("color", color);
+				
+				var colorObj = new w3color(color);
+				var rgb = colorObj.toRgbString();
+				var rgba = rgb.substring(0,rgb.length-1) + ",.4)";
+				$('.window').css("background-color", rgba); //Just changing opacity doesn't work
+			}
+			
+			$(function () {
+				var socket = io();
+				
+				//This receives connection messages
+				socket.on('con', function(msg){
+					var node = document.createElement("li");
+					var innerNode = document.createElement("span");
+					node.appendChild(innerNode);
+					innerNode.innerHTML = msg;
+					
+					node.style.textAlign = "left";
+					innerNode.style.backgroundColor = "#eee";
+					
+					document.getElementById("messages").appendChild(node);
+					
+					autoScroll();
+				});
+				
+				
+				//Detects if a user is typing
+				var alreadySent = false;
+				$('#m').on('input', function() {
+					if($("#m").val()!="" && !alreadySent) { //If the user is starting to type
+						console.log(uname + " is typing");
+						socket.emit('typing', uname);
+						alreadySent = true;
+					}
+					else if($("#m").val()=="") {
+						console.log(uname + " is not typing");
+						socket.emit('not typing', uname);
+						alreadySent = false;
+					}
+				});
+				var typers = []; //Array of people currently typing
+				socket.on('typing', function(username) {
+					$("#userTyping").css("display", "block");
+					typers.push(username);
+					$("#typerName").html(getTypersOuput(username));
+				});
+				socket.on('not typing', function(username) {
+					typers.splice(typers.indexOf(username), 1);
+					
+					$("#typerName").html(getTypersOuput(username));
+				});
+				function getTypersOuput(username) {
+					var length = typers.length;
+					var output = typers.toString() + " is ";
+					if(length==0)
+						$("#userTyping").css("display", "none");
+					else if(length==2)
+						output = typers[0] + " and " + typers[1];
+					else if(length==3)
+						output = typers[0] + ", " + typers[1] + ", and " + typers[2];
+					else if(length>3)
+						output = typers[0] + ", " + typers[1] + ", and others";
+					if(length>1)
+						output += " are ";
+					
+					return output;
+				}
+				
+				
+				//This allows chat messages to be published
+				$('form').submit(function(){
+					if($('#m').val() != "") {
+						//<b> tags around uname make it bold
+						//socket.emit('chat message', id + "<b>" + uname + "</b>: " + $('#m').val());
+						socket.emit('chat message', id, uname, $('#m').val());
+						socket.emit('not typing', uname);
+						alreadySent = false;
+					}
+					$('#m').val('');
+					return false;
+				});
+				//This allows chat messages to be received and added as list items
+				socket.on('chat message', function(senderId, senderName, msg){
+					var node = document.createElement("li");
+					var innerNode = document.createElement("span");
+					node.appendChild(innerNode);
+					
+					innerNode.innerHTML = msg;
+					
+					if(senderId == id) {//If I sent the message
+						node.style.textAlign = "right";
+						node.style.marginLeft = "30%";
+						innerNode.className = "coloredSpan dynamic";
+						innerNode.style.backgroundColor = color;
+					}
+					else {//If someone else sent the message
+						node.style.textAlign = "left";
+						innerNode.style.backgroundColor = "#eee"; //Lightgray
+						var h1s = document.getElementsByTagName("h1");
+						if(h1s[h1s.length-1].innerHTML!=senderName)
+							node.innerHTML = '<h1 class="senderName" style="color: '+color+';">' + senderName + "</h1>" + node.innerHTML; //Adds on the username of the sender
+					}
+					document.getElementById("messages").appendChild(node);
+					
+					autoScroll();
+				});
+			});
+			
+			/**Scrolls to the bottom of the window*/
+			function autoScroll() {
+				//Stops the previous scroll before the new one starts
+				$('html,body').stop();
+				//Scrolls to the bottom to show new items
+				if($(window).scrollTop() + $(window).height() > $(document).height() - 400) //Only scrolls if near bottom
+					$('html,body').animate({scrollTop: document.getElementById("messages").scrollHeight},"slow");
+			}
+			
+			//This focuses on the messaging box when hovering over it
+			$("#m").hover(function() {
+				$("#m").focus();
+			});
+			
+			//Puts a shadow below the nav when not at the top of the page
+			$(window).on('scroll', function() {
+				var scrollTop = $(this).scrollTop();
+				
+				if(scrollTop>0) {
+					$('nav').css("box-shadow", "0 5px 20px gray");
+				}
+				else {
+					$('nav').css("box-shadow", "none");
+				}
+			});
+		</script>
+	</body>
+</html>
