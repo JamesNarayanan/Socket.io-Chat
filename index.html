@@ -429,8 +429,7 @@
 					else {//If someone else sent the message
 						node.style.textAlign = "left";
 						innerNode.style.backgroundColor = "#eee"; //Lightgray
-						var h1s = document.getElementsByTagName("h1");
-						if(h1s[h1s.length-1].innerHTML!=senderName)
+						if($("h1:last").html()!=senderName)
 							node.innerHTML = '<h1 class="senderName" style="color: '+color+';">' + senderName + "</h1>" + node.innerHTML; //Adds on the username of the sender
 					}
 					document.getElementById("messages").appendChild(node);
