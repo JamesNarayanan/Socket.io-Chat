@@ -363,12 +363,10 @@
 				var alreadySent = false;
 				$('#m').on('input', function() {
 					if($("#m").val()!="" && !alreadySent) { //If the user is starting to type
-						console.log(uname + " is typing");
 						socket.emit('typing', uname);
 						alreadySent = true;
 					}
 					else if($("#m").val()=="") {
-						console.log(uname + " is not typing");
 						socket.emit('not typing', uname);
 						alreadySent = false;
 					}
@@ -429,7 +427,6 @@
 					else {//If someone else sent the message
 						node.style.textAlign = "left";
 						innerNode.style.backgroundColor = "#eee"; //Lightgray
-						console.log($("h1:last").data("senderId"), senderId);
 						if($("h1:last").data("senderId")==undefined || $("h1:last").data("senderId")!=senderId)
 							node.innerHTML = '<h1 class="senderName" style="color: '+color+';">' + senderName + "</h1>" + node.innerHTML; //Adds on the username of the sender
 					}
