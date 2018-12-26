@@ -408,7 +408,7 @@
 				$('form').submit(function(){
 					if($('#m').val() != "") {
 						socket.emit('chat message', id, uname, $('#m').val());
-						socket.emit('not typing', uname);
+						socket.emit('not typing', uname, id);
 						alreadySent = false;
 					}
 					$('#m').val('');
