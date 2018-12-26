@@ -287,7 +287,7 @@
 				else {
 					$("#nameChangeWindow").css("display", "none");
 					document.cookie = "username=" + uname;
-					id = Math.floor(Math.random()*(2**16 - 1)); //16 bit id
+					id = Math.floor(Math.random()*(2**24 - 1)); //16 bit id
 					document.cookie = "id=" + id;
 					updateNameTag();
 					return true;
@@ -363,24 +363,28 @@
 				var alreadySent = false;
 				$('#m').on('input', function() {
 					if($("#m").val()!="" && !alreadySent) { //If the user is starting to type
-						socket.emit('typing', uname);
+						socket.emit('typing', uname, id);
 						alreadySent = true;
 					}
 					else if($("#m").val()=="") {
-						socket.emit('not typing', uname);
+						socket.emit('not typing', uname, id);
 						alreadySent = false;
 					}
 				});
 				var typers = []; //Array of people currently typing
-				socket.on('typing', function(username) {
-					$("#userTyping").css("display", "block");
-					typers.push(username);
-					$("#typerName").html(getTypersOuput(username));
+				socket.on('typing', function(typerUsername, typerId) {
+					if(typerId!=id) {
+						$("#userTyping").css("display", "block");
+						typers.push(typerUsername);
+						$("#typerName").html(getTypersOuput(typerUsername));
+					}
 				});
-				socket.on('not typing', function(username) {
-					typers.splice(typers.indexOf(username), 1);
-					
-					$("#typerName").html(getTypersOuput(username));
+				socket.on('not typing', function(typerUsername, typerId) {
+					if(typerId!=id) {
+						typers.splice(typers.indexOf(typerUsername), 1);
+
+						$("#typerName").html(getTypersOuput(typerUsername));
+					}
 				});
 				function getTypersOuput(username) {
 					var length = typers.length;

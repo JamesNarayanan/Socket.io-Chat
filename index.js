@@ -20,14 +20,14 @@ io.on('connection', function(socket){
 		io.emit('chat message', id, name, msg);
 	});
 	
-	socket.on('typing', function(username){
-		console.log(username + ' is typing');
-		io.emit('typing', username);
+	socket.on('typing', function(username, id){
+		console.log(username + '(#' + id + ') is typing');
+		io.emit('typing', username, id);
 	});
 	
-	socket.on('not typing', function(username){
-		console.log(username + ' is not typing');
-		io.emit('not typing', username);
+	socket.on('not typing', function(username, id){
+		console.log(username + '(#' + id + ') is not typing');
+		io.emit('not typing', username, id);
 	});
 });
 
