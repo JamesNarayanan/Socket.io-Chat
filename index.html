@@ -405,8 +405,6 @@
 				//This allows chat messages to be published
 				$('form').submit(function(){
 					if($('#m').val() != "") {
-						//<b> tags around uname make it bold
-						//socket.emit('chat message', id + "<b>" + uname + "</b>: " + $('#m').val());
 						socket.emit('chat message', id, uname, $('#m').val());
 						socket.emit('not typing', uname);
 						alreadySent = false;
