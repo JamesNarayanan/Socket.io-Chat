@@ -280,10 +280,6 @@
 					alert("Username cannot be empty");
 				else if(uname.length>39)
 					alert("Username must be less than forty characters")
-				else if(uname.includes(":"))
-					alert("Username cannot contain a colon")
-				else if(uname.includes("<") || uname.includes(">"))
-					alert("Username cannot contain angle brackets")
 				else {
 					$("#nameChangeWindow").css("display", "none");
 					document.cookie = "username=" + uname;
@@ -425,18 +421,19 @@
 					if(senderId == id) {//If I sent the message
 						node.style.textAlign = "right";
 						node.style.marginLeft = "30%";
-						innerNode.className = "coloredSpan dynamic";
+						innerNode.className = "dynamic";
 						innerNode.style.backgroundColor = color;
 					}
 					else {//If someone else sent the message
 						node.style.textAlign = "left";
+						node.className = "OPM"; //Other Person Message
 						innerNode.style.backgroundColor = "#eee"; //Lightgray
-						if($("h1:last").data("senderId")==undefined || $("h1:last").data("senderId")!=senderId)
+						if($(".OPM:last").data("senderId")!=senderId)
 							node.innerHTML = '<h1 class="senderName" style="color: '+color+';">' + senderName + "</h1>" + node.innerHTML; //Adds on the username of the sender
 					}
 					document.getElementById("messages").appendChild(node);
 					
-					$("h1:last").data("senderId", senderId);
+					$("#messages li:last").data("senderId", senderId);
 					
 					autoScroll();
 				});
