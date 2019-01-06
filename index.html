@@ -179,8 +179,8 @@
 	<body onload="init()">
 		<nav class="dynamic">
 			<div id="uname"><div></div></div>
-			<div id="nameButton" class="button"><img src="https://cdn0.iconfinder.com/data/icons/set-app-incredibles/24/Edit-01-512.png" onclick="showNameChangeWindow()"></div>
-			<div id="settingsButton" class="button"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6d/Windows_Settings_app_icon.png" onclick="showSettingsWindow()"></div>
+			<div id="nameButton" class="button" title="Change your name"><img src="https://cdn0.iconfinder.com/data/icons/set-app-incredibles/24/Edit-01-512.png" onclick="showNameChangeWindow()"></div>
+			<div id="settingsButton" class="button" title="Settings"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6d/Windows_Settings_app_icon.png" onclick="showSettingsWindow()"></div>
 		</nav>
 		
 		<div id="nameChangeWindow" class="window">
@@ -208,7 +208,8 @@
 		<div id="userTyping"><span id="typerName"></span><span>typing</span></div>
 		
 		<form action="" id="messageForm" class="dynamic">
-			<input id="m" autocomplete="off"/><button>→</button>
+			<input id="m" autocomplete="off"/>
+			<button title="Send">→</button>
 		</form>
 		
 		<script src="/socket.io/socket.io.js"></script>
